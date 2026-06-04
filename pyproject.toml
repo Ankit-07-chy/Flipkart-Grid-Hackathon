@@ -11,4 +11,8 @@ dependencies = [
     "pygeohash>=3.3.0",
     "seaborn>=0.13.2",
     "lightgbm>=4.0.0",
+    "scikit-learn>=1.2.2",
+    "streamlit>=1.28.0",
+    "scikit-learn>=1.2.2",
+    "streamlit>=1.28.0",
 ]
