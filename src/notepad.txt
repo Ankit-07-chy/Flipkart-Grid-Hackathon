@@ -1,0 +1,109 @@
+FLIPKART DEMAND PREDICTION MODEL - PROCESS DOCUMENTATION
+
+1. DATA EXPLORATION & ANALYSIS
+   - Loaded train.csv, test.csv, and sample_submission.csv
+   - Analyzed data shape: 77,299 records with 11 features
+   - Identified missing values:
+     * RoadType: 600 nulls
+     * Temperature: 2,495 nulls
+     * Weather: 797 nulls
+   - No duplicate records found
+   - Demand range: 0.0000006 to 1.0 (highly skewed distribution)
+
+2. DATA CLEANING & PREPROCESSING
+   - Filled missing RoadType with 'Unknown'
+   - Filled missing Weather with 'Unknown'
+   - Filled missing Temperature with median value (16.38)
+   - Converted categorical features to numerical format
+
+3. FEATURE ENGINEERING
+   a) Time Features:
+      - Extracted hour and minute from timestamp
+      - Created cylindrical features for hour (hour_sin, hour_cos) to capture time circularity
+      - Created quarter_hour feature (minute // 15)
+      - Removed original timestamp column
+
+   b) Geospatial Features:
+      - Decoded geohash to latitude and longitude coordinates using pygeohash
+      - Removed geohash column (replaced with actual coordinates)
+
+   c) Categorical Encoding:
+      - LargeVehicles: Encoded as binary (1=Allowed, 0=Not Allowed)
+      - Landmarks: Encoded as binary (1=Yes, 0=No)
+      - RoadType: One-hot encoded (Residential, Street, Unknown)
+      - Weather: One-hot encoded (Rainy, Snowy, Sunny, Unknown)
+
+4. TARGET VARIABLE TRANSFORMATION
+   - Applied log1p transformation to demand (log(1 + x))
+   - Reason: Demand distribution is heavily right-skewed
+   - Improves model performance and convergence
+
+5. FEATURE SELECTION & CORRELATION ANALYSIS
+   - Analyzed correlation with demand
+   - Top positive correlations:
+     * RoadType_Street: 0.291
+     * NumberofLanes: 0.214
+     * LargeVehicles: 0.194
+     * hour_sin: 0.083
+   - Top negative correlations:
+     * RoadType_Residential: -0.757
+     * hour_cos: -0.068
+     * latitude: -0.039
+   - Dropped 'day' column (insufficient variance for model)
+
+6. MODEL SELECTION & TRAINING
+   - Algorithm: LightGBM Regressor
+   - Configuration:
+     * n_estimators: 1000
+     * learning_rate: 0.05
+     * num_leaves: 31
+     * feature_fraction: 0.8
+     * bagging_fraction: 0.8
+     * reg_alpha: 0.1 (L1 regularization)
+     * reg_lambda: 0.1 (L2 regularization)
+   - Training approach: 80/20 train-test split
+   - Early stopping: Monitored test set performance, stopped at 100 rounds without improvement
+
+7. MODEL EVALUATION
+   - Evaluation Metrics on Test Set:
+     * Mean Absolute Error (MAE)
+     * Root Mean Squared Error (RMSE)
+     * R² Score (coefficient of determination)
+   - Analysis:
+     * Feature importance rankings computed
+     * Actual vs Predicted scatter plot
+     * Residual analysis for error patterns
+     * Mean residual close to 0 (no systematic bias)
+
+8. TEST SET PREPARATION
+   - Applied identical transformations as training set:
+     * Filled missing values using training set statistics
+     * Extracted hour/minute and created cylindrical features
+     * Decoded geohash to coordinates
+     * Applied categorical encoding
+   - Ensured feature alignment with training features
+
+9. PREDICTIONS & SUBMISSION
+   - Generated predictions on test set
+   - Applied inverse transformation (expm1) to get original scale
+   - Created submission CSV with Index and demand columns
+   - Saved to data/submission.csv
+
+# KEY IMPROVEMENTS FOR BETTER METRICS
+
+1. Log transformation captures the non-linear relationship in demand
+2. Cylindrical encoding for temporal features preserves circularity
+3. Geohash decoding enables geographic feature engineering
+4. Early stopping prevents overfitting
+5. Regularization (alpha=0.1, lambda=0.1) reduces variance
+6. Feature bagging and column sampling improve robustness
+
+# FUTURE OPTIMIZATION OPPORTUNITIES
+
+- Hyperparameter tuning (GridSearchCV/RandomizedSearchCV)
+- Feature interactions (e.g., hour × RoadType)
+- Advanced feature engineering (geographical clustering, density features)
+- Ensemble methods (stacking multiple models)
+- Cross-validation strategies for robust evaluation
+- Outlier detection and handling
+- Domain-specific features (peak hours, seasonal patterns)
