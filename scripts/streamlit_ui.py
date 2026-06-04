@@ -78,7 +78,7 @@ def preprocess_input(time_str, geohash, road_type, lanes, large_vehicles, landma
 
     return input_data
 
-def main():
+def main1():
     st.title("FlipKart Grid - Traffic Demand Prediction")
     st.markdown("Predict traffic demand at any location and time")
 
@@ -239,4 +239,4 @@ def main():
         st.markdown("**For more details:** Check README.md and notepad.txt in the project root")
 
 if __name__ == "__main__":
-    main()
+    main1()
